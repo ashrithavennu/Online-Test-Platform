@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduAssess — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0a0f2e; --accent: #4f8ef7; --accent2: #7c3aed; --teal: #06b6d4;
+    --surface: #161d45; --surface2: #1e2757; --surface3: #242d66;
+    --border: rgba(79,142,247,0.15); --text: #e8eaf6; --muted: #8892b0;
+    --success: #10b981; --warning: #f59e0b; --error: #ef4444;
+    --font: 'Sora', sans-serif; --mono: 'JetBrains Mono', monospace;
+  }
+  body { font-family: var(--font); background: var(--navy); color: var(--text); min-height: 100vh; display: flex; }
+  .sidebar { width: 230px; background: var(--surface); border-right: 1px solid var(--border); padding: 28px 0; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 10; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 24px 28px; border-bottom: 1px solid var(--border); }
+  .brand-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; font-family: var(--mono); }
+  .admin-badge { font-size: 10px; background: rgba(239,68,68,0.15); color: #f87171; border-radius: 5px; padding: 2px 6px; margin-left: 4px; }
+  .nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; color: var(--muted); cursor: pointer; transition: all 0.2s; text-decoration: none; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(79,142,247,0.12); color: var(--accent); font-weight: 500; }
+  .nav-section { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 14px 12px 6px; }
+  .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #f97316); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; }
+  .main { margin-left: 230px; flex: 1; padding: 32px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .btn { padding: 9px 18px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border: none; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 600; font-family: var(--mono); }
+  .stat-trend { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .grid2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .card-title { font-size: 14px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; padding: 0 0 10px; text-align: left; }
+  td { font-size: 13px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+  .badge.open { background: rgba(16,185,129,0.15); color: var(--success); }
+  .badge.draft { background: rgba(245,158,11,0.15); color: var(--warning); }
+  .badge.closed { background: rgba(239,68,68,0.12); color: #f87171; }
+  .badge.good { background: rgba(16,185,129,0.15); color: var(--success); }
+  .badge.avg { background: rgba(245,158,11,0.15); color: var(--warning); }
+  .badge.low { background: rgba(239,68,68,0.12); color: #f87171; }
+  .action-btn { padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: var(--font); transition: all 0.2s; }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .perf-bar-bg { height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; margin-top: 5px; }
+  .perf-bar { height: 100%; border-radius: 99px; }
+  .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .qa-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; text-align: left; transition: all 0.2s; }
+  .qa-btn:hover { border-color: var(--accent); background: rgba(79,142,247,0.06); }
+  .qa-icon { font-size: 20px; margin-bottom: 8px; display: block; }
+  .qa-label { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .qa-desc { font-size: 11px; color: var(--muted); }
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 1000; min-height: 100vh; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 480px; max-width: 96vw; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 13px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 13px; font-family: var(--font); outline: none; transition: border 0.2s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-group select option { background: var(--navy); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-cancel { flex: 1; padding: 10px; border-radius: 9px; font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: var(--font); }
+  .btn-save { flex: 2; padding: 10px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: var(--accent); color: #fff; font-family: var(--font); }
+  .mcq-block { background: var(--surface2); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .mcq-block-title { font-size: 12px; color: var(--accent); font-weight: 500; margin-bottom: 10px; }
+  .opt-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .opt-row label { font-size: 11px; color: var(--muted); width: 18px; flex-shrink: 0; }
+  .opt-row input { flex: 1; }
+  .correct-select { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .view-panel { display: none; }
+  .view-panel.active { display: block; }
+  .info-pill { display: inline-flex; gap: 6px; align-items: center; padding: 8px 14px; border-radius: 999px; background: rgba(79,142,247,0.12); font-size: 12px; color: var(--text); }
+  .data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .report-action { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+  .report-action:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">EA</div>
+    <span style="font-size:15px;font-weight:600">EduAssess</span>
+    <span class="admin-badge">Admin</span>
+  </div>
+  <nav class="nav">
+    <span class="nav-section">Management</span>
+    <a class="nav-item active" href="admin-dashboard.html" data-section="dashboard" onclick="showSection('dashboard')"><span>📊</span> Dashboard</a>
+    <a class="nav-item" href="#" onclick="openExamModal()"><span>📝</span> Create Exam</a>
+    <a class="nav-item" href="#" data-section="students" onclick="showSection('students')"><span>👥</span> Students</a>
+    <a class="nav-item" href="#" data-section="results" onclick="showSection('results')"><span>📋</span> All Results</a>
+    <span class="nav-section">Analytics</span>
+    <a class="nav-item" href="#" data-section="analytics" onclick="showSection('analytics')"><span>🤖</span> ML Analytics</a>
+    <a class="nav-item" href="#" data-section="reports" onclick="showSection('reports')"><span>📈</span> Reports</a>
+    <span class="nav-section">System</span>
+    <a class="nav-item" href="index.html"><span>🚪</span> Logout</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;gap:10px;padding:8px">
+      <div class="avatar">PK</div>
+      <div>
+        <div style="font-size:13px;font-weight:500">Prof. Kumar</div>
+        <div style="font-size:11px;color:var(--muted)">Admin · CSE Dept</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div style="font-size:22px;font-weight:600">Admin Dashboard</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:2px">Manage exams, students & view AI-powered analytics</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" onclick="exportResultsCsv()">Export Report</button>
+      <button class="btn btn-primary" onclick="openStudentsModal()" style="font-size:12px;padding:7px 14px">+ Add Students</button>
+      <button class="btn btn-primary" style="font-size:12px;padding:7px 14px" onclick="openExamModal()">+ Create Exam</button>
+    </div>
+  </div>
+
+  <div id="dashboard-view" class="view-panel active">
+    <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Total Students</div><div class="stat-value" style="color:var(--accent)">142</div><div class="stat-trend">↑ 8 this semester</div></div>
+    <div class="stat-card"><div class="stat-label">Active Exams</div><div class="stat-value" style="color:var(--success)">05</div><div class="stat-trend">2 closing today</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Class Score</div><div class="stat-value" style="color:#a78bfa">71%</div><div class="stat-trend">↑ 3% from last month</div></div>
+    <div class="stat-card"><div class="stat-label">AI Reports Generated</div><div class="stat-value" style="color:var(--teal)">89</div><div class="stat-trend">This semester</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Exam Management</div>
+        <button class="btn btn-primary" style="font-size:12px;padding:7px 14px" onclick="openExamModal()">+ New Exam</button>
+      </div>
+      <table>
+        <thead><tr><th>Exam Name</th><th>Questions</th><th>Students</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr><td>Data Structures — Unit 2</td><td>30</td><td>58</td><td><span class="badge open">Open</span></td><td><button class="action-btn">Edit</button></td></tr>
+          <tr><td>Operating Systems — Mid</td><td>25</td><td>61</td><td><span class="badge open">Open</span></td><td><button class="action-btn">Edit</button></td></tr>
+          <tr><td>DBMS — Final</td><td>40</td><td>60</td><td><span class="badge closed">Closed</span></td><td><button class="action-btn">Results</button></td></tr>
+          <tr><td>Computer Networks</td><td>20</td><td>0</td><td><span class="badge draft">Draft</span></td><td><button class="action-btn">Publish</button></td></tr>
+          <tr><td>Computer Architecture</td><td>35</td><td>59</td><td><span class="badge closed">Closed</span></td><td><button class="action-btn">Results</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Quick Actions</div></div>
+      <div class="quick-actions">
+        <div class="qa-btn" onclick="openExamModal()"><span class="qa-icon">📝</span><div class="qa-label">Create Exam</div><div class="qa-desc">Add new MCQ exam</div></div>
+        <div class="qa-btn" onclick="openStudentsModal()"><span class="qa-icon">👥</span><div class="qa-label">Add Students</div><div class="qa-desc">Add individual or bulk students</div></div>
+        <div class="qa-btn" onclick="showSection('analytics')"><span class="qa-icon">🤖</span><div class="qa-label">Run ML Analysis</div><div class="qa-desc">Predict all students</div></div>
+        <div class="qa-btn" onclick="showSection('reports')"><span class="qa-icon">📊</span><div class="qa-label">Generate Reports</div><div class="qa-desc">GenAI all results</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Student Performance Overview (ML Predictions)</div>
+      <span style="font-size:12px;color:var(--muted)">Decision Tree Model · Last updated: Today</span>
+    </div>
+    <table>
+      <thead><tr><th>Student</th><th>Roll No</th><th>Avg Score</th><th>Exams</th><th>ML Category</th><th>Performance</th></tr></thead>
+      <tbody id="dashboard-student-table"></tbody>
+    </table>
+  </div>
+</div>
+
+  <div id="students-view" class="view-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Students</div>
+        <button class="btn btn-outline" onclick="loadStudentsView()">Refresh</button>
+      </div>
+      <div class="data-grid">
+        <span class="info-pill" id="students-total">Loading students…</span>
+        <span class="info-pill" id="students-average">Avg score • —</span>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Roll / Emp</th><th>Department</th><th>Avg Score</th><th>Exams</th></tr></thead>
+        <tbody id="student-table"><tr><td colspan="6" style="color:var(--muted);text-align:center">Click Students to load student details.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="results-view" class="view-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">All Results</div>
+        <button class="btn btn-outline" onclick="loadResultsView()">Refresh</button>
+      </div>
+      <table>
+        <thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>Correct</th><th>Wrong</th><th>Time</th><th>Submitted</th></tr></thead>
+        <tbody id="results-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="analytics-view" class="view-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">ML Analytics</div>
+        <button class="btn btn-outline" onclick="loadAnalyticsView()">Refresh</button>
+      </div>
+      <div class="data-grid" id="analytics-summary"></div>
+      <table>
+        <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+        <tbody id="analytics-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="reports-view" class="view-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Reports</div>
+        <button class="btn btn-outline" onclick="loadReportsView()">Refresh</button>
+      </div>
+      <table>
+        <thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>Generated</th><th>Action</th></tr></thead>
+        <tbody id="reports-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Create Exam Modal -->
+<div class="modal-overlay" id="exam-modal">
+  <div class="modal">
+    <h2>📝 Create New Exam</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Exam Title</label><input type="text" placeholder="e.g. Data Structures Unit 3"/></div>
+      <div class="form-group"><label>Subject</label><select><option>Data Structures</option><option>Operating Systems</option><option>DBMS</option><option>Computer Networks</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Duration (mins)</label><input type="number" value="45"/></div>
+      <div class="form-group"><label>Total Questions</label><input type="number" value="30"/></div>
+    </div>
+    <div class="form-group"><label>Instructions</label><textarea placeholder="Write exam instructions here..."></textarea></div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--accent)">Sample Question</div>
+    <div class="mcq-block">
+      <div class="mcq-block-title">Question 1</div>
+      <div class="form-group" style="margin-bottom:10px"><textarea placeholder="Enter your question here..." style="min-height:50px"></textarea></div>
+      <div class="opt-row"><label>A.</label><input type="text" placeholder="Option A"/></div>
+      <div class="opt-row"><label>B.</label><input type="text" placeholder="Option B"/></div>
+      <div class="opt-row"><label>C.</label><input type="text" placeholder="Option C"/></div>
+      <div class="opt-row"><label>D.</label><input type="text" placeholder="Option D"/></div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0"><label>Correct Answer</label><select><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:4px">+ More questions added via the exam editor after saving</div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeExamModal()">Cancel</button>
+      <button class="btn-save" onclick="saveExam()">Save & Publish Exam</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="students-modal">
+  <div class="modal">
+    <h2>👥 Add Students</h2>
+    <div class="form-row" style="margin-bottom:18px">
+      <button class="btn-sm filled" id="student-mode-single" onclick="setStudentMode('single')" type="button">Individual</button>
+      <button class="btn-sm" id="student-mode-bulk" onclick="setStudentMode('bulk')" type="button">Bulk CSV</button>
+    </div>
+    <div id="student-form-single">
+      <div class="form-row">
+        <div class="form-group"><label>First Name</label><input id="stu-first" type="text" placeholder="Jane"/></div>
+        <div class="form-group"><label>Last Name</label><input id="stu-last" type="text" placeholder="Doe"/></div>
+      </div>
+      <div class="form-group"><label>Email</label><input id="stu-email" type="email" placeholder="jane@student.com"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>Password</label><input id="stu-pass" type="password" placeholder="student123"/></div>
+        <div class="form-group"><label>Roll Number</label><input id="stu-roll" type="text" placeholder="CS2024007"/></div>
+      </div>
+      <div class="form-group"><label>Department</label><input id="stu-dept" type="text" placeholder="Computer Science"/></div>
+    </div>
+    <div id="student-form-bulk" style="display:none">
+      <div class="form-group"><label>CSV Input</label><textarea id="stu-csv" placeholder="first_name,last_name,email,password,roll_number,department\nJane,Doe,jane@student.com,student123,CS2024007,Computer Science" style="min-height:160px"></textarea></div>
+      <div class="form-group"><label>Or upload CSV file</label><input id="stu-csv-file" type="file" accept="text/csv" onchange="loadCsvFile(event)"/></div>
+    </div>
+    <div id="student-msg" class="msg" style="margin-top:10px"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeStudentsModal()">Cancel</button>
+      <button class="btn-save" onclick="submitStudentForm()">Save Students</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="report-modal">
+  <div class="modal">
+    <h2>📄 AI Report</h2>
+    <div id="report-content" style="white-space: pre-wrap; min-height: 180px; color: var(--text);"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeReportModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const dashboardStudentTable = document.getElementById('dashboard-student-table');
+const studentTable = document.getElementById('student-table');
+const resultsBody = document.getElementById('results-table-body');
+const analyticsSummary = document.getElementById('analytics-summary');
+const analyticsBody = document.getElementById('analytics-table-body');
+const reportsBody = document.getElementById('reports-table-body');
+const studentsTotal = document.getElementById('students-total');
+const studentsAverage = document.getElementById('students-average');
+const reportContent = document.getElementById('report-content');
+const sections = ['dashboard','students','results','analytics','reports'];
+
+function showSection(section) {
+  sections.forEach(id => {
+    const view = document.getElementById(`${id}-view`);
+    if (view) view.classList.toggle('active', id === section);
+  });
+  document.querySelectorAll('.nav-item[data-section]').forEach(item => {
+    item.classList.toggle('active', item.dataset.section === section);
+  });
+  if (section === 'students') loadStudentsView();
+  if (section === 'results') loadResultsView();
+  if (section === 'analytics') loadAnalyticsView();
+  if (section === 'reports') loadReportsView();
+}
+
+function exportResultsCsv() {
+  API.getAllResults().then(res => {
+    if (res.error) {
+      alert('Export failed: ' + res.error);
+      return;
+    }
+    const rows = [['Student', 'Exam', 'Score', 'Correct', 'Wrong', 'Skipped', 'Time Taken', 'Submitted At']];
+    res.forEach(r => rows.push([r.student_name, r.exam_title, `${r.score}%`, r.correct, r.wrong, r.skipped, `${r.time_taken}m`, new Date(r.submitted_at).toLocaleString()]));
+    const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n'));
+    const link = document.createElement('a');
+    link.href = csvContent;
+    link.download = 'eduassess-results.csv';
+    link.click();
+  });
+}
+
+function openStudentsModal() {
+  document.getElementById('students-modal').classList.add('show');
+  setStudentMode('single');
+  document.getElementById('student-msg').textContent = '';
+}
+
+function closeStudentsModal() {
+  document.getElementById('students-modal').classList.remove('show');
+}
+
+function closeReportModal() {
+  document.getElementById('report-modal').classList.remove('show');
+}
+
+function showReportModal(text) {
+  reportContent.textContent = text;
+  document.getElementById('report-modal').classList.add('show');
+}
+
+function setStudentMode(mode) {
+  document.getElementById('student-form-single').style.display = mode === 'single' ? 'block' : 'none';
+  document.getElementById('student-form-bulk').style.display = mode === 'bulk' ? 'block' : 'none';
+  document.getElementById('student-mode-single').classList.toggle('filled', mode === 'single');
+  document.getElementById('student-mode-bulk').classList.toggle('filled', mode === 'bulk');
+}
+
+function loadCsvFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    document.getElementById('stu-csv').value = reader.result;
+  };
+  reader.readAsText(file);
+}
+
+async function submitStudentForm() {
+  const msg = document.getElementById('student-msg');
+  msg.className = 'msg';
+  const mode = document.getElementById('student-form-single').style.display === 'block' ? 'single' : 'bulk';
+  let res;
+  if (mode === 'single') {
+    const student = {
+      first_name: document.getElementById('stu-first').value.trim(),
+      last_name: document.getElementById('stu-last').value.trim(),
+      email: document.getElementById('stu-email').value.trim(),
+      password: document.getElementById('stu-pass').value,
+      roll_number: document.getElementById('stu-roll').value.trim(),
+      department: document.getElementById('stu-dept').value.trim() || 'General'
+    };
+    if (!student.first_name || !student.last_name || !student.email || !student.password) {
+      msg.className = 'msg error';
+      msg.textContent = 'Please fill required fields for the new student.';
+      return;
+    }
+    res = await API.addStudents([student]);
+  } else {
+    const csvText = document.getElementById('stu-csv').value.trim();
+    if (!csvText) {
+      msg.className = 'msg error';
+      msg.textContent = 'Please provide CSV content or upload a file.';
+      return;
+    }
+    res = await API.bulkAddStudents(csvText);
+  }
+  if (res.error) {
+    msg.className = 'msg error';
+    msg.textContent = res.error;
+    return;
+  }
+  msg.className = 'msg success';
+  msg.textContent = `${res.inserted.length} student(s) added, ${res.skipped.length} skipped.`;
+  closeStudentsModal();
+  loadStudentsView();
+}
+
+async function loadStudentsView() {
+  const res = await API.getStudents();
+  if (res.error) {
+    studentTable.innerHTML = `<tr><td colspan="6" style="color:var(--error)">Error loading students: ${res.error}</td></tr>`;
+    studentsTotal.textContent = 'Total students • 0';
+    studentsAverage.textContent = 'Avg score • —';
+    return;
+  }
+  studentTable.innerHTML = '';
+  let totalScore = 0;
+  let scoredCount = 0;
+  res.forEach(s => {
+    const avg = s.avg_score ? `${s.avg_score}%` : '—';
+    const exams = s.exam_count || 0;
+    const rollText = s.roll_number || '';
+    const empText = s.employee_id || '';
+    if (s.avg_score !== null && s.avg_score !== undefined) {
+      scoredCount += 1;
+      totalScore += Number(s.avg_score) || 0;
+    }
+    studentTable.innerHTML += `<tr>
+      <td style="font-weight:500">${s.first_name} ${s.last_name}</td>
+      <td>${s.email}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">${rollText}${empText ? ' / ' + empText : ''}</td>
+      <td>${s.department || 'General'}</td>
+      <td>${avg}</td>
+      <td>${exams}</td>
+    </tr>`;
+  });
+  studentsTotal.textContent = `Total students • ${res.length}`;
+  studentsAverage.textContent = `Avg score • ${scoredCount ? Math.round(totalScore / scoredCount) + '%' : '—'}`;
+}
+
+async function loadResultsView() {
+  const res = await API.getAllResults();
+  if (res.error) {
+    resultsBody.innerHTML = `<tr><td colspan="7" style="color:var(--error)">Error loading results: ${res.error}</td></tr>`;
+    return;
+  }
+  resultsBody.innerHTML = '';
+  res.forEach(r => {
+    resultsBody.innerHTML += `<tr>
+      <td>${r.student_name}</td>
+      <td>${r.exam_title}</td>
+      <td>${r.score}%</td>
+      <td>${r.correct}</td>
+      <td>${r.wrong}</td>
+      <td>${r.time_taken}m</td>
+      <td>${new Date(r.submitted_at).toLocaleString()}</td>
+    </tr>`;
+  });
+}
+
+async function loadAnalyticsView() {
+  const res = await API.getStudents();
+  if (res.error) {
+    analyticsBody.innerHTML = `<tr><td colspan="2" style="color:var(--error)">Error loading analytics: ${res.error}</td></tr>`;
+    analyticsSummary.innerHTML = '';
+    return;
+  }
+  const totalStudents = res.length;
+  const activeStudents = res.filter(s => s.exam_count > 0).length;
+  const avgScore = res.filter(s => s.avg_score !== null && s.avg_score !== undefined).reduce((sum, s) => sum + Number(s.avg_score || 0), 0);
+  const avgValue = totalStudents ? Math.round(avgScore / totalStudents) : 0;
+  analyticsSummary.innerHTML = `
+    <span class="info-pill">Students • ${totalStudents}</span>
+    <span class="info-pill">Avg score • ${avgValue}%</span>
+    <span class="info-pill">Exam takers • ${activeStudents}</span>
+  `;
+  analyticsBody.innerHTML = `
+    <tr><td>Total students</td><td>${totalStudents}</td></tr>
+    <tr><td>Average student score</td><td>${avgValue}%</td></tr>
+    <tr><td>Students who took exams</td><td>${activeStudents}</td></tr>
+    <tr><td>Students without exams</td><td>${totalStudents - activeStudents}</td></tr>
+  `;
+}
+
+async function loadReportsView() {
+  const res = await API.getAllResults();
+  if (res.error) {
+    reportsBody.innerHTML = `<tr><td colspan="5" style="color:var(--error)">Error loading reports: ${res.error}</td></tr>`;
+    return;
+  }
+  reportsBody.innerHTML = '';
+  res.forEach(r => {
+    reportsBody.innerHTML += `<tr>
+      <td>${r.student_name}</td>
+      <td>${r.exam_title}</td>
+      <td>${r.score}%</td>
+      <td>${new Date(r.submitted_at).toLocaleString()}</td>
+      <td><button class="report-action" onclick="requestReport(${r.student_id}, ${r.id})">Generate</button></td>
+    </tr>`;
+  });
+}
+
+async function requestReport(studentId, attemptId) {
+  const res = await API.generateReport(studentId, attemptId);
+  if (res.error) {
+    showReportModal(`Could not generate report: ${res.error}`);
+    return;
+  }
+  showReportModal(res.report || 'Report generated successfully.');
+}
+
+function openExamModal() { document.getElementById('exam-modal').classList.add('show'); }
+function closeExamModal() { document.getElementById('exam-modal').classList.remove('show'); }
+function saveExam() { alert('Exam created and published successfully!'); closeExamModal(); }
+
+showSection('dashboard');
+</script>
+<script src="api.js"></script>
+<script>
+  const currentUser = API.requireAuth('admin');
+  if (currentUser) {
+    const avatar = document.querySelector('.sidebar-footer .avatar');
+    if (avatar) avatar.textContent = currentUser.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+    const nameEl = document.querySelector('.sidebar-footer div div');
+    if (nameEl) nameEl.textContent = currentUser.name;
+    const metaEl = document.querySelector('.sidebar-footer div div + div');
+    if (metaEl) metaEl.textContent = `Admin · ${currentUser.department || ''}${currentUser.employee_id ? ' · ' + currentUser.employee_id : ''}`;
+  }
+</script>
+</body>
+</html>

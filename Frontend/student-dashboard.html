@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduAssess — Student Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0a0f2e; --navy2: #121843; --accent: #4f8ef7; --accent2: #7c3aed;
+    --teal: #06b6d4; --surface: #161d45; --surface2: #1e2757; --surface3: #242d66;
+    --border: rgba(79,142,247,0.15); --text: #e8eaf6; --muted: #8892b0;
+    --success: #10b981; --warning: #f59e0b; --error: #ef4444;
+    --font: 'Sora', sans-serif; --mono: 'JetBrains Mono', monospace;
+  }
+  body { font-family: var(--font); background: var(--navy); color: var(--text); min-height: 100vh; display: flex; }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 60% 50% at 70% 10%, rgba(79,142,247,0.08) 0%, transparent 60%);
+  }
+  .sidebar {
+    width: 230px; background: var(--surface); border-right: 1px solid var(--border);
+    padding: 28px 0; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 10;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 24px 28px; border-bottom: 1px solid var(--border); }
+  .brand-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; font-family: var(--mono); }
+  .brand-name { font-size: 15px; font-weight: 600; }
+  .nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+    font-size: 13.5px; color: var(--muted); cursor: pointer; transition: all 0.2s; text-decoration: none;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(79,142,247,0.12); color: var(--accent); font-weight: 500; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-section { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 14px 12px 6px; }
+  .sidebar-footer { padding: 16px 16px 0; border-top: 1px solid var(--border); }
+  .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-radius: 10px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--teal)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; }
+  .user-info { flex: 1; }
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-role { font-size: 11px; color: var(--muted); }
+  .main { margin-left: 230px; flex: 1; padding: 32px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .page-title { font-size: 22px; font-weight: 600; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .badge-notif { background: var(--accent); color: #fff; border-radius: 6px; font-size: 11px; font-weight: 600; padding: 4px 8px; font-family: var(--mono); }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 600; font-family: var(--mono); }
+  .stat-value.blue { color: var(--accent); }
+  .stat-value.green { color: var(--success); }
+  .stat-value.purple { color: #a78bfa; }
+  .stat-value.amber { color: var(--warning); }
+  .stat-trend { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .section-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .card-title { font-size: 14px; font-weight: 600; }
+  .btn-sm {
+    padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--accent); font-family: var(--font); transition: all 0.2s;
+  }
+  .btn-sm:hover { background: rgba(79,142,247,0.1); }
+  .btn-sm.filled { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .exam-list { display: flex; flex-direction: column; gap: 12px; }
+  .exam-item { background: var(--surface2); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
+  .exam-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .exam-icon.blue { background: rgba(79,142,247,0.15); }
+  .exam-icon.purple { background: rgba(124,58,237,0.15); }
+  .exam-icon.teal { background: rgba(6,182,212,0.15); }
+  .exam-info { flex: 1; }
+  .exam-name { font-size: 13.5px; font-weight: 500; }
+  .exam-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .exam-action { flex-shrink: 0; }
+  .status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 500;
+  }
+  .status-badge.open { background: rgba(16,185,129,0.15); color: var(--success); }
+  .status-badge.upcoming { background: rgba(245,158,11,0.15); color: var(--warning); }
+  .status-badge.done { background: rgba(79,142,247,0.12); color: var(--accent); }
+  .perf-bar-wrap { margin-bottom: 14px; }
+  .perf-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .perf-bar-label span:last-child { font-family: var(--mono); font-weight: 500; color: var(--text); }
+  .perf-bar-bg { height: 7px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .perf-bar { height: 100%; border-radius: 99px; transition: width 1s ease; }
+  .perf-bar.blue { background: linear-gradient(90deg, var(--accent), var(--teal)); }
+  .perf-bar.purple { background: linear-gradient(90deg, var(--accent2), #c084fc); }
+  .perf-bar.green { background: linear-gradient(90deg, var(--success), #34d399); }
+  .perf-bar.amber { background: linear-gradient(90deg, var(--warning), #fcd34d); }
+  .ai-card { border: 1px solid rgba(124,58,237,0.25); background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(79,142,247,0.06)); }
+  .ai-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #a78bfa; font-weight: 600; margin-bottom: 6px; }
+  .ai-text { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .ai-highlight { color: var(--text); }
+  .result-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .result-row:last-child { border-bottom: none; }
+  .result-name { flex: 1; font-size: 13px; }
+  .result-score { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+  .result-tag { font-size: 11px; padding: 2px 8px; border-radius: 5px; font-weight: 500; }
+  .tag-good { background: rgba(16,185,129,0.15); color: var(--success); }
+  .tag-avg { background: rgba(245,158,11,0.15); color: var(--warning); }
+  .tag-low { background: rgba(239,68,68,0.15); color: var(--error); }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">EA</div>
+    <span class="brand-name">EduAssess</span>
+  </div>
+  <nav class="nav">
+    <span class="nav-section">Main</span>
+    <a class="nav-item active" href="student-dashboard.html">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+    <a class="nav-item" href="exam.html">
+      <span class="nav-icon">📝</span> Take Exam
+    </a>
+    <a class="nav-item" href="results.html">
+      <span class="nav-icon">🏆</span> My Results
+    </a>
+    <span class="nav-section">AI Features</span>
+    <a class="nav-item" href="results.html#report">
+      <span class="nav-icon">🤖</span> AI Report
+    </a>
+    <a class="nav-item" href="results.html#prediction">
+      <span class="nav-icon">📈</span> ML Prediction
+    </a>
+    <span class="nav-section">Account</span>
+    <a class="nav-item" href="index.html">
+      <span class="nav-icon">🚪</span> Logout
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="avatar">JS</div>
+      <div class="user-info">
+        <div class="user-name">John Student</div>
+        <div class="user-role">CS2024001 · CSE</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Student Dashboard</div>
+      <div class="page-sub">Welcome back, John! Ready for today's exams?</div>
+    </div>
+    <div class="topbar-right">
+      <span class="badge-notif">2 Exams Open</span>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Exams Attempted</div>
+      <div class="stat-value blue">08</div>
+      <div class="stat-trend">↑ 2 this month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Average Score</div>
+      <div class="stat-value green">76%</div>
+      <div class="stat-trend">↑ +4% from last</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ML Prediction</div>
+      <div class="stat-value purple">Good</div>
+      <div class="stat-trend">Based on performance</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Rank</div>
+      <div class="stat-value amber">#12</div>
+      <div class="stat-trend">Out of 60 students</div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <div>
+      <div class="section-title">Available Exams</div>
+      <div class="card">
+        <div class="exam-list">
+          <div class="exam-item">
+            <div class="exam-icon blue">📘</div>
+            <div class="exam-info">
+              <div class="exam-name">Data Structures & Algorithms</div>
+              <div class="exam-meta">30 MCQs · 45 mins · Prof. Kumar</div>
+            </div>
+            <div class="exam-action">
+              <a href="exam.html"><button class="btn-sm filled">Start</button></a>
+            </div>
+          </div>
+          <div class="exam-item">
+            <div class="exam-icon purple">📗</div>
+            <div class="exam-info">
+              <div class="exam-name">Operating Systems</div>
+              <div class="exam-meta">25 MCQs · 40 mins · Prof. Sharma</div>
+            </div>
+            <div class="exam-action">
+              <span class="status-badge open">Open</span>
+            </div>
+          </div>
+          <div class="exam-item">
+            <div class="exam-icon teal">📙</div>
+            <div class="exam-info">
+              <div class="exam-name">Computer Networks</div>
+              <div class="exam-meta">20 MCQs · 30 mins · Prof. Reddy</div>
+            </div>
+            <div class="exam-action">
+              <span class="status-badge upcoming">Tomorrow</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Subject Performance</div>
+      <div class="card">
+        <div class="perf-bar-wrap"><div class="perf-bar-label"><span>Data Structures</span><span>82%</span></div><div class="perf-bar-bg"><div class="perf-bar blue" style="width:82%"></div></div></div>
+        <div class="perf-bar-wrap"><div class="perf-bar-label"><span>Operating Systems</span><span>68%</span></div><div class="perf-bar-bg"><div class="perf-bar purple" style="width:68%"></div></div></div>
+        <div class="perf-bar-wrap"><div class="perf-bar-label"><span>DBMS</span><span>90%</span></div><div class="perf-bar-bg"><div class="perf-bar green" style="width:90%"></div></div></div>
+        <div class="perf-bar-wrap"><div class="perf-bar-label"><span>Computer Networks</span><span>61%</span></div><div class="perf-bar-bg"><div class="perf-bar amber" style="width:61%"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-grid" style="margin-top:20px">
+    <div>
+      <div class="section-title">Recent Results</div>
+      <div class="card">
+        <div class="result-row">
+          <span class="result-name">Database Management Systems</span>
+          <span class="result-score">90%</span>
+          <span class="result-tag tag-good">Good</span>
+        </div>
+        <div class="result-row">
+          <span class="result-name">Operating Systems — Mid</span>
+          <span class="result-score">68%</span>
+          <span class="result-tag tag-avg">Average</span>
+        </div>
+        <div class="result-row">
+          <span class="result-name">Data Structures — Unit 2</span>
+          <span class="result-score">82%</span>
+          <span class="result-tag tag-good">Good</span>
+        </div>
+        <div class="result-row">
+          <span class="result-name">Computer Architecture</span>
+          <span class="result-score">55%</span>
+          <span class="result-tag tag-low">Needs Work</span>
+        </div>
+        <div style="margin-top:16px"><a href="results.html"><button class="btn-sm" style="width:100%">View All Results →</button></a></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">AI Performance Report</div>
+      <div class="card ai-card">
+        <div class="ai-label">🤖 Generated by GenAI</div>
+        <div class="ai-text">
+          <span class="ai-highlight">John</span> has demonstrated <span class="ai-highlight">consistent improvement</span> across technical subjects. Strong grasp of DBMS concepts with 90% score. OS and Networking scores suggest room for improvement.
+          <br><br>
+          <span class="ai-highlight">ML Prediction:</span> Based on exam scores, time taken, and attempt history — classified as <span style="color:#a78bfa;font-weight:600">Good Performer</span>.
+          <br><br>
+          <em style="color:var(--muted);font-size:12px">Recommendation: Focus on OS and Networks. Practice 2–3 mock tests weekly.</em>
+        </div>
+        <div style="margin-top:16px"><a href="results.html"><button class="btn-sm" style="width:100%">Full AI Report →</button></a></div>
+      </div>
+    </div>
+  </div>
+</main>
+<script src="api.js"></script>
+<script>
+  const currentUser = API.requireAuth('student');
+  if (currentUser) {
+    const avatar = document.querySelector('.sidebar-footer .avatar');
+    if (avatar) avatar.textContent = currentUser.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+    const userName = document.querySelector('.user-name');
+    if (userName) userName.textContent = currentUser.name;
+    const userRole = document.querySelector('.user-role');
+    if (userRole) {
+      const idText = currentUser.employee_id || currentUser.roll_number || '';
+      userRole.textContent = `${idText} · ${currentUser.department || ''}`;
+    }
+  }
+</script>
+</body>
+</html>

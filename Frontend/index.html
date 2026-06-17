@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduAssess — AI-Powered Exam Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0a0f2e;
+    --navy2: #121843;
+    --accent: #4f8ef7;
+    --accent2: #7c3aed;
+    --teal: #06b6d4;
+    --surface: #161d45;
+    --surface2: #1e2757;
+    --border: rgba(79,142,247,0.18);
+    --text: #e8eaf6;
+    --muted: #8892b0;
+    --success: #10b981;
+    --error: #ef4444;
+    --font: 'Sora', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  body {
+    font-family: var(--font);
+    background: var(--navy);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 20% 20%, rgba(79,142,247,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(124,58,237,0.1) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image: linear-gradient(rgba(79,142,247,0.04) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(79,142,247,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  .container {
+    display: flex;
+    width: 900px;
+    max-width: 96vw;
+    min-height: 540px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 80px rgba(79,142,247,0.08);
+  }
+  .panel-left {
+    width: 42%;
+    background: linear-gradient(135deg, #0d1535 0%, #1a2060 100%);
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .panel-left::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+  .brand-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff; font-family: var(--mono);
+  }
+  .brand-name { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  .panel-left h1 { font-size: 28px; font-weight: 600; line-height: 1.3; margin-bottom: 12px; }
+  .panel-left h1 span { color: var(--accent); }
+  .panel-left p { color: var(--muted); font-size: 14px; line-height: 1.7; }
+  .features { margin-top: 32px; display: flex; flex-direction: column; gap: 14px; }
+  .feature { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+  .feature-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .stats { display: flex; gap: 24px; margin-top: auto; padding-top: 32px; }
+  .stat { }
+  .stat-n { font-size: 22px; font-weight: 600; color: var(--accent); font-family: var(--mono); }
+  .stat-l { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .panel-right {
+    flex: 1;
+    background: var(--surface);
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .tabs { display: flex; gap: 0; margin-bottom: 32px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer;
+    color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none;
+    font-family: var(--font);
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .form-section { display: none; }
+  .form-section.active { display: block; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 11px 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); font-size: 14px; font-family: var(--font);
+    outline: none; transition: border 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group select option { background: var(--navy2); }
+  .btn {
+    width: 100%; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none; font-family: var(--font); transition: all 0.2s; margin-top: 4px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .divider { text-align: center; color: var(--muted); font-size: 12px; margin: 16px 0; position: relative; }
+  .divider::before, .divider::after {
+    content: ''; position: absolute; top: 50%; width: 38%; height: 1px;
+    background: var(--border);
+  }
+  .divider::before { left: 0; } .divider::after { right: 0; }
+  .btn-secondary {
+    background: transparent; border: 1px solid var(--border); color: var(--text);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .role-switch { margin-top: 20px; text-align: center; font-size: 13px; color: var(--muted); }
+  .role-switch a { color: var(--accent); text-decoration: none; font-weight: 500; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .msg { font-size: 12px; margin-top: 6px; }
+  .msg.error { color: var(--error); }
+  .msg.success { color: var(--success); }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="container">
+  <div class="panel-left">
+    <div>
+      <div class="brand">
+        <div class="brand-icon">EA</div>
+        <span class="brand-name">EduAssess</span>
+      </div>
+      <h1>AI-Powered <span>Online Examination</span> Platform</h1>
+      <p style="margin-top:12px">A full-stack college assessment system enhanced with Machine Learning & Generative AI capabilities.</p>
+      <div class="features">
+        <div class="feature"><div class="feature-dot"></div>Smart performance prediction with Decision Tree ML</div>
+        <div class="feature"><div class="feature-dot"></div>AI-generated detailed performance reports</div>
+        <div class="feature"><div class="feature-dot"></div>Real-time MCQ exam with auto-scoring</div>
+        <div class="feature"><div class="feature-dot"></div>Admin & Faculty exam management dashboard</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n">98%</div><div class="stat-l">Accuracy</div></div>
+      <div class="stat"><div class="stat-n">ML</div><div class="stat-l">Powered</div></div>
+      <div class="stat"><div class="stat-n">GenAI</div><div class="stat-l">Reports</div></div>
+    </div>
+  </div>
+  <div class="panel-right">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="tab" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <div class="form-section active" id="login">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="student@college.edu"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="••••••••"/>
+      </div>
+      <div class="form-group">
+        <label>Login As</label>
+        <select id="login-role">
+          <option value="student">Student</option>
+          <option value="admin">Admin / Faculty</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="handleLogin()">Sign In to Platform</button>
+      <div id="login-msg" class="msg"></div>
+      <div class="divider">or</div>
+      <button class="btn btn-secondary" onclick="switchTab('register')">Create New Account</button>
+    </div>
+
+    <div class="form-section" id="register">
+      <div class="row2">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="reg-fname" placeholder="John"/>
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="reg-lname" placeholder="Doe"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Register As</label>
+        <select id="reg-role">
+          <option value="student">Student</option>
+          <option value="admin">Admin / Faculty</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="reg-email" placeholder="student@college.edu"/>
+      </div>
+      <div class="row2">
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="reg-pass" placeholder="••••••••"/>
+        </div>
+        <div class="form-group">
+          <label id="reg-roll-label">Roll Number</label>
+          <input type="text" id="reg-roll" placeholder="CS2024001"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <select id="reg-dept">
+          <option>Computer Science</option>
+          <option>Information Technology</option>
+          <option>Electronics</option>
+          <option>Mechanical</option>
+          <option>Civil</option>
+        </select>
+      </div>
+      <div class="form-group" id="admin-emp-group" style="display:none">
+        <label>Employee ID</label>
+        <input type="text" id="reg-empid" placeholder="EMP12345"/>
+      </div>
+      <div class="form-group" id="admin-code-group" style="display:none">
+        <label>Admin Invite Code</label>
+        <input type="text" id="reg-admin-code" placeholder="optional invite code"/>
+      </div>
+      <button class="btn btn-primary" onclick="handleRegister()">Create Account</button>
+      <div id="reg-msg" class="msg"></div>
+    </div>
+
+      <div class="role-switch">
+      Faculty/Admin? Use the role dropdown above and sign in with an admin account.
+    </div>
+  </div>
+</div>
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+}
+
+// Toggle registration fields based on selected role
+document.getElementById('reg-role').addEventListener('change', function(e){
+  const role = e.target.value;
+  const rollLabel = document.getElementById('reg-roll-label');
+  const rollInput = document.getElementById('reg-roll');
+  const empGroup = document.getElementById('admin-emp-group');
+  const codeGroup = document.getElementById('admin-code-group');
+  if (role === 'admin') {
+    empGroup.style.display = 'block';
+    codeGroup.style.display = 'block';
+    rollLabel.textContent = 'Roll / Emp ID';
+    rollInput.placeholder = 'EMP12345';
+  } else {
+    empGroup.style.display = 'none';
+    codeGroup.style.display = 'none';
+    rollLabel.textContent = 'Roll Number';
+    rollInput.placeholder = 'CS2024001';
+  }
+});
+async function handleLogin() {
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-pass').value;
+  const role = document.getElementById('login-role').value;
+  const msg = document.getElementById('login-msg');
+  if (!email || !pass) { msg.className='msg error'; msg.textContent='Please fill all fields.'; return; }
+  msg.className='msg success'; msg.textContent='Signing in...';
+
+  const res = await API.login(email, pass, role);
+  if (res.error) {
+    msg.className='msg error';
+    msg.textContent = res.error || 'Login failed';
+    return;
+  }
+
+  msg.className='msg success';
+  msg.textContent = 'Login successful. Redirecting...';
+  setTimeout(() => {
+    if (res.user.role === 'admin') window.location.href = 'admin-dashboard.html';
+    else window.location.href = 'student-dashboard.html';
+  }, 500);
+}
+
+async function handleRegister() {
+  const fname = document.getElementById('reg-fname').value;
+  const lname = document.getElementById('reg-lname').value;
+  const email = document.getElementById('reg-email').value;
+  const pass = document.getElementById('reg-pass').value;
+  const role = document.getElementById('reg-role').value;
+  const roll = document.getElementById('reg-roll').value;
+  const empid = document.getElementById('reg-empid').value;
+  const adminCode = document.getElementById('reg-admin-code').value;
+  const dept = document.getElementById('reg-dept').value;
+  const msg = document.getElementById('reg-msg');
+
+  if (!fname || !lname || !email || !pass || !dept) {
+    msg.className='msg error';
+    msg.textContent='Please fill all required fields.';
+    return;
+  }
+
+  if (role === 'student' && !roll) {
+    msg.className='msg error';
+    msg.textContent='Please provide roll number for students.';
+    return;
+  }
+  if (role === 'admin' && !empid) {
+    msg.className='msg error';
+    msg.textContent='Please provide employee ID for admin/faculty.';
+    return;
+  }
+
+  msg.className='msg success';
+  msg.textContent='Creating account...';
+
+  const payload = {
+    first_name: fname,
+    last_name: lname,
+    email,
+    password: pass,
+    roll_number: role === 'student' ? roll : '',
+    employee_id: role === 'admin' ? empid : '',
+    department: dept,
+    role: role
+  };
+  if (role === 'admin' && adminCode) payload.admin_code = adminCode;
+
+  const res = await API.register(payload);
+  if (res.error) {
+    msg.className='msg error';
+    msg.textContent = res.error || 'Registration failed';
+    return;
+  }
+
+  msg.className='msg success';
+  msg.textContent='Account created successfully. Redirecting...';
+  setTimeout(() => {
+    if (res.user && res.user.role === 'admin') window.location.href = 'admin-dashboard.html';
+    else window.location.href = 'student-dashboard.html';
+  }, 800);
+}
+</script>
+<script src="api.js"></script>
+</body>
+</html>

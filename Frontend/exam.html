@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduAssess — Data Structures Exam</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0a0f2e; --accent: #4f8ef7; --accent2: #7c3aed; --teal: #06b6d4;
+    --surface: #161d45; --surface2: #1e2757; --surface3: #242d66;
+    --border: rgba(79,142,247,0.15); --text: #e8eaf6; --muted: #8892b0;
+    --success: #10b981; --warning: #f59e0b; --error: #ef4444;
+    --font: 'Sora', sans-serif; --mono: 'JetBrains Mono', monospace;
+  }
+  body { font-family: var(--font); background: var(--navy); color: var(--text); min-height: 100vh; }
+  .topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+  .exam-title { font-size: 15px; font-weight: 600; }
+  .exam-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .timer-wrap { display: flex; align-items: center; gap: 8px; }
+  .timer-label { font-size: 12px; color: var(--muted); }
+  .timer { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--accent); }
+  .timer.warn { color: var(--warning); }
+  .timer.danger { color: var(--error); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .progress-label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .btn-submit {
+    padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: var(--accent); color: #fff; border: none; font-family: var(--font); transition: all 0.2s;
+  }
+  .btn-submit:hover { opacity: 0.9; }
+  .layout { display: flex; height: calc(100vh - 65px); }
+  .sidebar {
+    width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+    padding: 20px 14px; overflow-y: auto; flex-shrink: 0;
+  }
+  .sidebar-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+  .q-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+  .q-btn {
+    width: 100%; aspect-ratio: 1; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted); font-size: 12px; font-family: var(--mono);
+    cursor: pointer; transition: all 0.15s; font-weight: 500;
+  }
+  .q-btn.current { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.1); }
+  .q-btn.answered { background: rgba(16,185,129,0.15); border-color: var(--success); color: var(--success); }
+  .q-btn.skipped { background: rgba(245,158,11,0.1); border-color: var(--warning); color: var(--warning); }
+  .legend { margin-top: 20px; display: flex; flex-direction: column; gap: 7px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .content { flex: 1; padding: 32px; overflow-y: auto; }
+  .q-counter { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 8px; }
+  .q-text { font-size: 17px; font-weight: 500; line-height: 1.5; margin-bottom: 28px; }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option {
+    display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px;
+    border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface);
+    cursor: pointer; transition: all 0.2s; user-select: none;
+  }
+  .option:hover { border-color: var(--accent); background: rgba(79,142,247,0.05); }
+  .option.selected { border-color: var(--accent); background: rgba(79,142,247,0.1); }
+  .opt-radio {
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; transition: all 0.2s;
+  }
+  .option.selected .opt-radio { border-color: var(--accent); }
+  .opt-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); display: none; }
+  .option.selected .opt-dot { display: block; }
+  .opt-label { font-size: 14px; font-weight: 500; color: var(--accent); font-family: var(--mono); margin-right: 4px; flex-shrink: 0; }
+  .opt-text { font-size: 14px; line-height: 1.5; }
+  .nav-btns { display: flex; justify-content: space-between; align-items: center; margin-top: 36px; }
+  .btn-nav {
+    padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); font-family: var(--font); transition: all 0.2s;
+  }
+  .btn-nav:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-nav.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-skip { padding: 10px 22px; border-radius: 10px; font-size: 13px; color: var(--warning); cursor: pointer; background: transparent; border: 1px solid rgba(245,158,11,0.2); font-family: var(--font); transition: all 0.2s; }
+  .btn-skip:hover { background: rgba(245,158,11,0.08); }
+  .progress-bar-wrap { height: 3px; background: var(--surface2); margin-top: 6px; border-radius: 2px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--teal)); border-radius: 2px; transition: width 0.4s; }
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; max-width: 400px; width: 90%; text-align: center; }
+  .modal h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .modal p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+  .modal-btns { display: flex; gap: 12px; justify-content: center; }
+  .modal-cancel { padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text); font-family: var(--font); }
+  .modal-confirm { padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: var(--accent); color: #fff; font-family: var(--font); }
+  /* Proctoring */
+  .proctor-badge { position: fixed; bottom: 20px; right: 20px; width: 140px; border-radius: 12px; background: var(--surface); border: 2px solid var(--accent); z-index: 999; box-shadow: 0 8px 32px rgba(0,0,0,0.3); overflow: hidden; }
+  #video-feed { width: 100%; height: auto; display: block; object-fit: cover; background: #000; }
+  .proctor-status { padding: 8px; font-size: 11px; text-align: center; color: var(--success); font-weight: 600; background: rgba(16,185,129,0.1); border-top: 1px solid var(--border); }
+  .proctor-status.warning { color: var(--warning); background: rgba(245,158,11,0.1); }
+  .proctor-status.error { color: var(--error); background: rgba(239,68,68,0.1); }
+  .proctor-icon { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; background: rgba(16,185,129,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .fullscreen-warning { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--surface); border: 2px solid var(--warning); border-radius: 16px; padding: 32px; z-index: 2000; text-align: center; max-width: 380px; box-shadow: 0 16px 64px rgba(0,0,0,0.4); display: none; }
+  .fullscreen-warning.show { display: block; animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+  .fullscreen-warning h3 { font-size: 18px; color: var(--warning); margin-bottom: 12px; }
+  .fullscreen-warning p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+  .fullscreen-warning button { padding: 10px 24px; border-radius: 8px; border: none; background: var(--warning); color: #fff; font-weight: 600; cursor: pointer; font-family: var(--font); }
+  /* Start Modal */
+  .exam-start-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 3000; }
+  .exam-start-content { background: var(--surface); border: 2px solid var(--accent); border-radius: 16px; padding: 40px; max-width: 420px; text-align: center; }
+  .exam-start-content h2 { font-size: 22px; color: var(--accent); margin-bottom: 16px; }
+  .exam-start-content p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+  .exam-start-content ul { text-align: left; display: inline-block; margin-bottom: 24px; }
+  .exam-start-content li { font-size: 13px; color: var(--text); margin-bottom: 10px; }
+  .exam-start-btn { padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; background: var(--accent); color: #fff; font-family: var(--font); width: 100%; transition: all 0.2s; }
+  .exam-start-btn:hover { opacity: 0.9; background: var(--teal); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <div class="exam-title">Data Structures &amp; Algorithms — Unit Test</div>
+    <div class="exam-sub">Prof. Kumar &nbsp;·&nbsp; 30 Questions &nbsp;·&nbsp; 45 Minutes &nbsp;·&nbsp; <span style="color:var(--success)">🎥 Proctored</span></div>
+    <div class="progress-bar-wrap" style="width:220px;margin-top:6px"><div class="progress-bar" id="progress-bar" style="width:3%"></div></div>
+  </div>
+  <div class="timer-wrap">
+    <span class="timer-label">Time Left</span>
+    <div class="timer" id="timer">45:00</div>
+  </div>
+  <div class="topbar-right">
+    <span class="progress-label" id="progress-label">Q 1 / 30</span>
+    <button class="btn-submit" onclick="showModal()">Submit Exam</button>
+  </div>
+</div>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-title">Question Navigator</div>
+    <div class="q-grid" id="q-grid"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(79,142,247,0.5);border:1px solid var(--accent)"></div>Current</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(16,185,129,0.3)"></div>Answered</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(245,158,11,0.2)"></div>Skipped</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--surface2)"></div>Not visited</div>
+    </div>
+  </aside>
+  <main class="content">
+    <div class="q-counter" id="q-counter">Question 1 of 30</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="nav-btns">
+      <button class="btn-nav" onclick="prevQ()" id="btn-prev">← Previous</button>
+      <button class="btn-skip" onclick="skipQ()">Skip for later</button>
+      <button class="btn-nav primary" onclick="nextQ()" id="btn-next">Next Question →</button>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>Submit Exam?</h2>
+    <p id="modal-msg">You have answered <strong id="ans-count">0</strong> of 30 questions. Are you sure you want to submit?</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Review Again</button>
+      <button class="modal-confirm" onclick="submitExam()">Yes, Submit →</button>
+    </div>
+  </div></div>
+
+<div class="proctor-badge" id="proctor-badge">
+  <video id="video-feed" autoplay muted playsinline></video>
+  <div class="proctor-icon">🎥</div>
+  <div class="proctor-status" id="proctor-status">Recording</div>
+</div>
+
+<div class="fullscreen-warning" id="fullscreen-warning">
+  <h3>⚠️ Fullscreen Required</h3>
+  <p>You must stay in fullscreen mode during the exam. Click below to re-enter fullscreen, or the exam will be submitted.</p>
+  <button onclick="enterFullscreen()">Enter Fullscreen →</button>
+</div>
+
+<div class="exam-start-modal" id="exam-start-modal">
+  <div class="exam-start-content">
+    <h2>🎯 Proctored Exam Starting</h2>
+    <p><strong>Important:</strong> This exam is monitored with strict proctoring to ensure academic integrity.</p>
+    <ul>
+      <li>✓ Fullscreen mode required</li>
+      <li>✓ Camera & microphone access requested</li>
+      <li>✓ Tab switching will be detected (max 3 warnings)</li>
+      <li>✓ Strict timer — cannot pause or go back</li>
+      <li>✓ Developer tools disabled</li>
+      <li>✓ Auto-submit on time expiry</li>
+    </ul>
+    <p style="color:var(--warning);font-weight:600;margin:16px 0">Ready? Click below to begin.</p>
+    <button class="exam-start-btn" onclick="startExamProctoring()">Start Proctored Exam →</button>
+  </div>
+</div>
+
+<script>
+// ── EXAM STATE ──────────────────────────────────
+const questions = [
+  { q: "What is the time complexity of binary search on a sorted array of n elements?", opts: ["O(n)", "O(log n)", "O(n log n)", "O(1)"], ans: 1 },
+  { q: "Which data structure uses LIFO (Last In First Out) principle?", opts: ["Queue", "Linked List", "Stack", "Heap"], ans: 2 },
+  { q: "What is the worst-case time complexity of QuickSort?", opts: ["O(n log n)", "O(n²)", "O(n)", "O(log n)"], ans: 1 },
+  { q: "Which traversal visits nodes in Left → Root → Right order?", opts: ["Preorder", "Postorder", "Inorder", "Level order"], ans: 2 },
+  { q: "What data structure is used to implement Breadth First Search (BFS)?", opts: ["Stack", "Queue", "Heap", "Tree"], ans: 1 },
+  { q: "The minimum number of edges in a connected graph with n vertices is:", opts: ["n", "n-1", "n+1", "2n"], ans: 1 },
+  { q: "Which sorting algorithm has the best average case performance?", opts: ["Bubble Sort", "Selection Sort", "Merge Sort", "Insertion Sort"], ans: 2 },
+  { q: "A full binary tree with n leaf nodes has how many total nodes?", opts: ["n-1", "2n", "2n-1", "n+1"], ans: 2 },
+  { q: "Which of the following is NOT a self-balancing BST?", opts: ["AVL Tree", "Red-Black Tree", "B-Tree", "Binary Search Tree"], ans: 3 },
+  { q: "What is the space complexity of Merge Sort?", opts: ["O(1)", "O(log n)", "O(n)", "O(n²)"], ans: 2 },
+  { q: "In a max-heap, the root node contains:", opts: ["Minimum element", "Maximum element", "Median element", "Random element"], ans: 1 },
+  { q: "Which algorithm is used to find the shortest path in a weighted graph?", opts: ["DFS", "BFS", "Dijkstra's", "Kruskal's"], ans: 2 },
+  { q: "What does 'amortized complexity' mean?", opts: ["Worst case per operation", "Average cost per operation over a sequence", "Best case", "Space complexity"], ans: 1 },
+  { q: "A deque (double-ended queue) supports insertion and deletion from:", opts: ["Only front", "Only rear", "Both front and rear", "Middle only"], ans: 2 },
+  { q: "Hash collision occurs when:", opts: ["Two keys are equal", "Two different keys map to same index", "Hash table is full", "Key is not found"], ans: 1 },
+];
+const totalQ = 30;
+let current = 0;
+let answers = new Array(totalQ).fill(null);
+let visited = new Array(totalQ).fill(false);
+let skipped = new Array(totalQ).fill(false);
+let startTime = Date.now();
+let totalTime = 45 * 60;
+let examActive = false;
+let tabSwitchWarnings = 0;
+let isFullscreen = false;
+let mediaRecorder = null;
+let recordedChunks = [];
+
+// ── PROCTORING: VIDEO CAPTURE ──────────────────
+async function startProctoring() {
+  // Try to start camera/audio recording
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { width: 140, height: 140 }, 
+      audio: true 
+    });
+    document.getElementById('video-feed').srcObject = stream;
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+    mediaRecorder.start();
+    updateProctorStatus('Recording', 'success');
+  } catch (err) {
+    console.error('Camera access denied:', err);
+    updateProctorStatus('Camera denied', 'warning');
+    // Exam continues with fullscreen/tab-lock/timer enforcement even without camera
+  }
+}
+
+// ── START EXAM WITH USER GESTURE ────────────────
+async function startExamProctoring() {
+  // Hide start modal
+  document.getElementById('exam-start-modal').style.display = 'none';
+  
+  // Enable exam content
+  document.querySelector('.layout').style.opacity = '1';
+  document.querySelector('.layout').style.pointerEvents = 'auto';
+  
+  // Enable exam state
+  examActive = true;
+  
+  // Try fullscreen (now with user gesture, should succeed)
+  enterFullscreen();
+  
+  // Start camera/microphone capture
+  startProctoring();
+}
+
+
+function updateProctorStatus(text, level = 'success') {
+  const el = document.getElementById('proctor-status');
+  el.textContent = text;
+  el.className = `proctor-status ${level === 'success' ? '' : level === 'warning' ? 'warning' : 'error'}`;
+}
+
+// ── FULLSCREEN ENFORCEMENT ──────────────────────
+async function enterFullscreen() {
+  try {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) { await elem.requestFullscreen(); }
+    else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
+    else if (elem.mozRequestFullScreen) { elem.mozRequestFullScreen(); }
+    else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+    isFullscreen = true;
+  } catch (err) { console.error('Fullscreen failed:', err); }
+}
+
+// ── FULLSCREEN EXIT PREVENTION ──────────────────
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && examActive) {
+    showFullscreenWarning();
+  }
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement && examActive) {
+    showFullscreenWarning();
+  }
+});
+document.addEventListener('mozfullscreenchange', () => {
+  if (!document.mozFullScreenElement && examActive) {
+    showFullscreenWarning();
+  }
+});
+document.addEventListener('msfullscreenchange', () => {
+  if (!document.msFullscreenElement && examActive) {
+    showFullscreenWarning();
+  }
+});
+
+function showFullscreenWarning() {
+  document.getElementById('fullscreen-warning').classList.add('show');
+  updateProctorStatus('Exited fullscreen!', 'error');
+  let timeout = 30;
+  const warn = setInterval(() => {
+    timeout--;
+    if (timeout <= 0) {
+      clearInterval(warn);
+      document.getElementById('fullscreen-warning').classList.remove('show');
+      submitExam();
+    }
+  }, 1000);
+}
+
+// ── TAB SWITCHING PREVENTION ────────────────────
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && examActive) {
+    tabSwitchWarnings++;
+    updateProctorStatus(`Tab switch #${tabSwitchWarnings}`, 'warning');
+    console.warn(`Tab switch detected: ${tabSwitchWarnings}`);
+    if (tabSwitchWarnings >= 3) {
+      alert('Exam suspended due to multiple tab switches. Your exam will be submitted.');
+      submitExam();
+    }
+  } else if (!document.hidden) {
+    if (tabSwitchWarnings > 0) {
+      updateProctorStatus('Recording', 'success');
+    }
+  }
+});
+
+// ── PREVENT PAGE NAVIGATION ────────────────────
+window.addEventListener('beforeunload', (e) => {
+  if (examActive && totalTime > 0) {
+    e.preventDefault();
+    e.returnValue = 'Exam in progress. Are you sure you want to leave?';
+  }
+});
+
+// ── PREVENT RIGHT-CLICK & INSPECT ──────────────
+document.addEventListener('contextmenu', (e) => {
+  if (examActive) e.preventDefault();
+});
+document.addEventListener('keydown', (e) => {
+  if (examActive) {
+    if (e.key === 'F12' || e.ctrlKey && e.shiftKey && e.key === 'I' || e.ctrlKey && e.key === 'J') {
+      e.preventDefault();
+      alert('Developer tools are disabled during proctored exams.');
+    }
+  }
+});
+
+// ── EXAM UI LOGIC (existing) ────────────────────
+function renderQ() {
+  visited[current] = true;
+  const q = questions[current % questions.length];
+  document.getElementById('q-counter').textContent = `Question ${current+1} of ${totalQ}`;
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('progress-label').textContent = `Q ${current+1} / ${totalQ}`;
+  document.getElementById('progress-bar').style.width = ((current+1)/totalQ*100)+'%';
+  document.getElementById('btn-prev').style.opacity = current === 0 ? '0.3' : '1';
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  const labels = ['A','B','C','D'];
+  q.opts.forEach((o,i) => {
+    const div = document.createElement('div');
+    div.className = 'option' + (answers[current] === i ? ' selected' : '');
+    div.innerHTML = `<div class="opt-radio"><div class="opt-dot"></div></div><span class="opt-label">${labels[i]}.</span><span class="opt-text">${o}</span>`;
+    div.onclick = () => selectOpt(i);
+    opts.appendChild(div);
+  });
+  renderGrid();
+}
+function selectOpt(i) {
+  answers[current] = i;
+  skipped[current] = false;
+  renderQ();
+}
+function nextQ() { if (current < totalQ-1) { current++; renderQ(); } }
+function prevQ() { if (current > 0) { current--; renderQ(); } }
+function skipQ() { skipped[current] = true; answers[current] = null; if (current < totalQ-1) { current++; renderQ(); } }
+function renderGrid() {
+  const grid = document.getElementById('q-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < totalQ; i++) {
+    const b = document.createElement('button');
+    b.className = 'q-btn' + (i === current ? ' current' : answers[i] !== null ? ' answered' : skipped[i] ? ' skipped' : '');
+    b.textContent = i+1;
+    b.onclick = () => { current = i; renderQ(); };
+    grid.appendChild(b);
+  }
+}
+function showModal() {
+  const ans = answers.filter(a => a !== null).length;
+  document.getElementById('ans-count').textContent = ans;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+function getQueryParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+const EXAM_ID = parseInt(getQueryParam('exam_id')) || 1;
+const EXAM_SUBJECT = 'Data Structures & Algorithms';
+
+async function submitExam() {
+  const user = API.currentUser();
+  if (!user || user.role !== 'student') {
+    alert('You must be logged in as a student to submit the exam.');
+    window.location.href = 'index.html';
+    return;
+  }
+
+  const correct = answers.filter((a, i) => a === questions[i % questions.length].ans).length;
+  const wrong = answers.filter((a, i) => a !== null && a !== questions[i % questions.length].ans).length;
+  const skippedCount = answers.filter((a) => a === null).length;
+  const score = Math.round((correct / totalQ) * 100);
+  const elapsed = Math.round((Date.now() - startTime) / 1000);
+
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+  }
+
+  const answerMap = {};
+  const answerLabels = ['A', 'B', 'C', 'D'];
+  answers.forEach((sel, i) => {
+    if (sel !== null) {
+      answerMap[String(i + 1)] = answerLabels[sel] || null;
+    }
+  });
+
+  const payload = await API.submitExam(user.id, EXAM_ID, answerMap, elapsed);
+  if (payload.error) {
+    console.error('Submission error:', payload.error);
+    alert('Exam submission failed. Please try again.');
+    return;
+  }
+
+  const resultData = {
+    attempt_id: payload.attempt_id,
+    score, correct, wrong, skipped: skippedCount,
+    total: totalQ, time: elapsed, subject: EXAM_SUBJECT,
+    proctored: true
+  };
+  localStorage.setItem('examResult', JSON.stringify(resultData));
+  window.location.href = `results.html?attempt_id=${payload.attempt_id}`;
+}
+
+// ── TIMER WITH MILESTONES ──────────────────────
+let timerInterval = setInterval(() => {
+  totalTime--;
+  const m = Math.floor(totalTime/60), s = totalTime%60;
+  const t = document.getElementById('timer');
+  t.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  
+  if (totalTime === 900) alert('15 minutes remaining');
+  if (totalTime === 300) alert('5 minutes remaining');
+  if (totalTime === 60) alert('1 minute remaining');
+  
+  if (totalTime <= 300) t.className = 'timer warn';
+  if (totalTime <= 60) t.className = 'timer danger';
+  if (totalTime <= 0) {
+    clearInterval(timerInterval);
+    examActive = false;
+    submitExam();
+  }
+}, 1000);
+
+// ── INIT ────────────────────────────────────────
+// Show start modal, wait for user to click start button
+document.getElementById('exam-start-modal').style.display = 'flex';
+// Hide exam content until exam starts
+document.querySelector('.layout').style.opacity = '0.3';
+document.querySelector('.layout').style.pointerEvents = 'none';
+// Render questions (but they won't be interactive yet)
+renderQ();
+
+</script>
+<script src="api.js"></script>
+<script>
+  API.requireAuth('student');
+</script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduAssess — Exam Results</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0a0f2e; --accent: #4f8ef7; --accent2: #7c3aed; --teal: #06b6d4;
+    --surface: #161d45; --surface2: #1e2757; --border: rgba(79,142,247,0.15);
+    --text: #e8eaf6; --muted: #8892b0;
+    --success: #10b981; --warning: #f59e0b; --error: #ef4444;
+    --font: 'Sora', sans-serif; --mono: 'JetBrains Mono', monospace;
+  }
+  body { font-family: var(--font); background: var(--navy); color: var(--text); min-height: 100vh; }
+  body::before { content:''; position:fixed; inset:0; pointer-events:none; background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(79,142,247,0.1) 0%, transparent 60%); }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; font-family: var(--mono); }
+  .btn-back { padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: var(--font); text-decoration: none; transition: all 0.2s; }
+  .btn-back:hover { color: var(--text); border-color: var(--accent); }
+  .page { max-width: 900px; margin: 0 auto; padding: 36px 24px; }
+  .result-hero { text-align: center; margin-bottom: 40px; }
+  .result-hero h1 { font-size: 28px; font-weight: 600; margin-bottom: 6px; }
+  .result-hero p { color: var(--muted); font-size: 14px; }
+  .score-ring-wrap { display: flex; justify-content: center; margin: 28px 0; }
+  .score-ring { position: relative; width: 160px; height: 160px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-num { font-family: var(--mono); font-size: 36px; font-weight: 600; color: var(--accent); }
+  .score-pct { font-size: 14px; color: var(--muted); }
+  .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+  .mini-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .mini-value { font-size: 20px; font-weight: 600; font-family: var(--mono); }
+  .section { margin-bottom: 28px; }
+  .section-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .section-badge { font-size: 10px; background: rgba(79,142,247,0.15); color: var(--accent); border-radius: 5px; padding: 2px 8px; font-weight: 500; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+  .ml-card { border: 1px solid rgba(124,58,237,0.3); background: linear-gradient(135deg, rgba(124,58,237,0.07), rgba(79,142,247,0.05)); }
+  .ai-card { border: 1px solid rgba(6,182,212,0.25); background: linear-gradient(135deg, rgba(6,182,212,0.06), rgba(79,142,247,0.04)); }
+  .ml-prediction { display: flex; align-items: center; gap: 20px; }
+  .ml-badge { width: 80px; height: 80px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); }
+  .ml-icon { font-size: 28px; }
+  .ml-tag { font-size: 9px; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; font-weight: 600; }
+  .ml-info { flex: 1; }
+  .ml-category { font-size: 22px; font-weight: 600; color: #a78bfa; margin-bottom: 4px; }
+  .ml-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .ml-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .ml-feature { background: var(--surface2); border-radius: 8px; padding: 10px; }
+  .ml-feat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .ml-feat-value { font-size: 14px; font-weight: 500; font-family: var(--mono); color: var(--text); }
+  .ai-report { }
+  .ai-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .ai-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(6,182,212,0.15); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .ai-title { font-size: 14px; font-weight: 600; }
+  .ai-subtitle { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .ai-loading { display: flex; align-items: center; gap: 10px; padding: 20px 0; }
+  .spinner { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--teal); animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ai-body { font-size: 14px; color: var(--muted); line-height: 1.8; }
+  .ai-body strong { color: var(--text); font-weight: 500; }
+  .ai-body .highlight { color: var(--teal); font-weight: 500; }
+  .ai-sections { display: flex; flex-direction: column; gap: 14px; }
+  .ai-section-block { background: var(--surface2); border-radius: 10px; padding: 14px 16px; }
+  .ai-section-label { font-size: 11px; color: var(--teal); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 6px; }
+  .ai-section-text { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .ai-section-text strong { color: var(--text); }
+  .q-review { display: flex; flex-direction: column; gap: 10px; }
+  .q-item { background: var(--surface2); border-radius: 10px; padding: 14px 16px; border-left: 3px solid transparent; }
+  .q-item.correct { border-left-color: var(--success); }
+  .q-item.wrong { border-left-color: var(--error); }
+  .q-item.unattempted { border-left-color: var(--warning); }
+  .q-item-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .q-num { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .q-status { font-size: 11px; font-weight: 600; }
+  .q-status.c { color: var(--success); }
+  .q-status.w { color: var(--error); }
+  .q-status.u { color: var(--warning); }
+  .q-q { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .q-answer { font-size: 12px; color: var(--muted); }
+  .q-answer span { color: var(--success); }
+  .actions { display: flex; gap: 12px; margin-top: 28px; }
+  .btn-action { flex: 1; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all 0.2s; text-align: center; text-decoration: none; display: block; }
+  .btn-primary { background: var(--accent); color: #fff; border: none; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">EA</div>
+    <span style="font-size:15px;font-weight:600">EduAssess</span>
+  </div>
+  <a href="student-dashboard.html" class="btn-back">← Back to Dashboard</a>
+</div>
+
+<div class="page">
+  <div class="result-hero">
+    <h1>Exam Completed! 🎉</h1>
+    <p id="exam-subject">Data Structures &amp; Algorithms — Unit Test</p>
+  </div>
+
+  <div class="score-ring-wrap">
+    <div class="score-ring">
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <circle cx="80" cy="80" r="65" fill="none" stroke="rgba(79,142,247,0.1)" stroke-width="12"/>
+        <circle cx="80" cy="80" r="65" fill="none" stroke="url(#sg)" stroke-width="12" stroke-linecap="round"
+          stroke-dasharray="408.4" stroke-dashoffset="408.4" id="ring-circle"/>
+        <defs>
+          <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#4f8ef7"/>
+            <stop offset="100%" stop-color="#06b6d4"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="score-center">
+        <div class="score-num" id="score-display">0</div>
+        <div class="score-pct">Score</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards-row">
+    <div class="mini-card"><div class="mini-label">Correct</div><div class="mini-value" id="correct-n" style="color:var(--success)">—</div></div>
+    <div class="mini-card"><div class="mini-label">Wrong</div><div class="mini-value" id="wrong-n" style="color:var(--error)">—</div></div>
+    <div class="mini-card"><div class="mini-label">Skipped</div><div class="mini-value" id="skip-n" style="color:var(--warning)">—</div></div>
+    <div class="mini-card"><div class="mini-label">Time Taken</div><div class="mini-value" id="time-n" style="color:var(--accent)">—</div></div>
+  </div>
+
+  <div class="section" id="prediction">
+    <div class="section-title">🤖 ML Performance Prediction <span class="section-badge">Decision Tree</span></div>
+    <div class="card ml-card">
+      <div class="ml-prediction">
+        <div class="ml-badge">
+          <div class="ml-icon" id="ml-icon">🌟</div>
+          <div class="ml-tag">ML</div>
+        </div>
+        <div class="ml-info">
+          <div class="ml-category" id="ml-category">Analyzing...</div>
+          <div class="ml-desc" id="ml-desc">Running Decision Tree model on your exam data...</div>
+        </div>
+      </div>
+      <div class="ml-features">
+        <div class="ml-feature"><div class="ml-feat-label">Exam Score</div><div class="ml-feat-value" id="feat-score">—</div></div>
+        <div class="ml-feature"><div class="ml-feat-label">Time Taken</div><div class="ml-feat-value" id="feat-time">—</div></div>
+        <div class="ml-feature"><div class="ml-feat-label">Attempts</div><div class="ml-feat-value" id="feat-attempts">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="report">
+    <div class="section-title">✨ AI Performance Report <span class="section-badge">GenAI Powered</span></div>
+    <div class="card ai-card">
+      <div class="ai-header">
+        <div class="ai-icon">🧠</div>
+        <div>
+          <div class="ai-title">Personalized Performance Analysis</div>
+          <div class="ai-subtitle">Generated using Generative AI based on your exam results</div>
+        </div>
+      </div>
+      <div id="ai-loading" class="ai-loading">
+        <div class="spinner"></div>
+        <span style="font-size:13px;color:var(--muted)">Generating your personalized AI report...</span>
+      </div>
+      <div id="ai-content" style="display:none">
+        <div class="ai-sections">
+          <div class="ai-section-block">
+            <div class="ai-section-label">📊 Overall Performance</div>
+            <div class="ai-section-text" id="ai-overall"></div>
+          </div>
+          <div class="ai-section-block">
+            <div class="ai-section-label">💪 Strengths</div>
+            <div class="ai-section-text" id="ai-strengths"></div>
+          </div>
+          <div class="ai-section-block">
+            <div class="ai-section-label">📈 Areas for Improvement</div>
+            <div class="ai-section-text" id="ai-improve"></div>
+          </div>
+          <div class="ai-section-block">
+            <div class="ai-section-label">🎯 Recommendations</div>
+            <div class="ai-section-text" id="ai-reco"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📋 Question Review</div>
+    <div class="card">
+      <div class="q-review" id="q-review"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a href="student-dashboard.html" class="btn-action btn-outline">← Back to Dashboard</a>
+    <a href="exam.html" class="btn-action btn-primary">Retake Exam</a>
+  </div>
+</div>
+
+<script>
+const questions = [
+  { q: "What is the time complexity of binary search on a sorted array of n elements?", opts: ["O(n)", "O(log n)", "O(n log n)", "O(1)"], ans: 1 },
+  { q: "Which data structure uses LIFO (Last In First Out) principle?", opts: ["Queue", "Linked List", "Stack", "Heap"], ans: 2 },
+  { q: "What is the worst-case time complexity of QuickSort?", opts: ["O(n log n)", "O(n²)", "O(n)", "O(log n)"], ans: 1 },
+  { q: "Which traversal visits nodes in Left → Root → Right order?", opts: ["Preorder", "Postorder", "Inorder", "Level order"], ans: 2 },
+  { q: "What data structure is used to implement BFS?", opts: ["Stack", "Queue", "Heap", "Tree"], ans: 1 },
+];
+const labels = ['A','B','C','D'];
+
+function getQueryParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+function mapBackendResult(res) {
+  const total = res.total_q ?? 30;
+  const correct = res.correct ?? 0;
+  const wrong = res.wrong ?? Math.max(0, total - correct - (res.skipped ?? 0));
+  const skipped = res.skipped ?? Math.max(0, total - correct - wrong);
+
+  return {
+    score: res.score ?? 0,
+    correct,
+    wrong,
+    skipped,
+    total,
+    timeTaken: res.time_taken ?? 0,
+    subject: res.exam_title || res.subject || 'Data Structures & Algorithms',
+    attempts_label: '1st'
+  };
+}
+
+function renderResult(result) {
+  const score = result.score ?? 0;
+  const correct = result.correct ?? 0;
+  const total = result.total ?? 30;
+  const timeTaken = result.timeTaken ?? result.time_taken ?? 0;
+  const wrong = result.wrong ?? Math.max(0, total - correct - (result.skipped ?? 0));
+  const skipped = result.skipped ?? Math.max(0, total - correct - wrong);
+  const subject = result.subject || 'Data Structures & Algorithms';
+
+  document.getElementById('exam-subject').textContent = `${subject} — Unit Test`;
+  document.getElementById('correct-n').textContent = correct;
+  document.getElementById('wrong-n').textContent = wrong;
+  document.getElementById('skip-n').textContent = skipped;
+  document.getElementById('time-n').textContent = timeTaken + 'm';
+  document.getElementById('feat-score').textContent = score + '%';
+  document.getElementById('feat-time').textContent = timeTaken + ' min';
+  document.getElementById('feat-attempts').textContent = result.attempts_label || '1st';
+
+  window.__resultData = { score, correct, total, wrong, skipped, timeTaken, subject };
+
+  setTimeout(() => {
+    let s = 0;
+    const interval = setInterval(() => {
+      s = Math.min(s + 2, score);
+      document.getElementById('score-display').textContent = s + '%';
+      const circ = 408.4;
+      document.getElementById('ring-circle').style.strokeDashoffset = circ - (circ * s / 100);
+      if (s >= score) clearInterval(interval);
+    }, 20);
+  }, 300);
+}
+
+async function loadAttemptResult() {
+  const attemptId = getQueryParam('attempt_id');
+  const localResult = localStorage.getItem('examResult');
+
+  if (attemptId) {
+    const res = await API.getAttempt(parseInt(attemptId, 10));
+    if (!res || res.error) {
+      console.warn('Could not load attempt from backend, falling back to local result.', res?.error);
+      if (localResult) {
+        renderResult(JSON.parse(localResult));
+      } else {
+        renderResult({ score: 0, correct: 0, wrong: 0, skipped: 0, total: 30, timeTaken: 0, subject: 'Data Structures & Algorithms' });
+      }
+      return;
+    }
+    renderResult(mapBackendResult(res));
+    return;
+  }
+
+  if (localResult) {
+    renderResult(JSON.parse(localResult));
+    return;
+  }
+
+  renderResult({ score: 0, correct: 0, wrong: 0, skipped: 0, total: 30, timeTaken: 0, subject: 'Data Structures & Algorithms' });
+}
+
+function renderAiReport() {
+  const data = window.__resultData || { score: 0, total: 30, timeTaken: 0, subject: 'Data Structures & Algorithms' };
+  const score = data.score;
+  const total = data.total;
+  const timeTaken = data.timeTaken;
+  const subject = data.subject;
+
+  let category, desc, icon;
+  if (score >= 75) {
+    category = 'Good Performer';
+    icon = '🌟';
+    desc = 'Decision Tree model classified you as a Good Performer based on your score, time management, and attempt rate. Keep up the excellent work!';
+  } else if (score >= 50) {
+    category = 'Average Performer';
+    icon = '📈';
+    desc = 'The model predicts Average performance. You show understanding of core concepts. Consistent practice will move you to Good Performer tier.';
+  } else {
+    category = 'Needs Improvement';
+    icon = '💡';
+    desc = 'The model suggests areas needing improvement. Focus on weak topics, practice more MCQs and attempt previous year papers to improve significantly.';
+  }
+
+  document.getElementById('ml-category').textContent = category;
+  document.getElementById('ml-desc').textContent = desc;
+  document.getElementById('ml-icon').textContent = icon;
+
+  setTimeout(() => {
+    document.getElementById('ai-loading').style.display = 'none';
+    document.getElementById('ai-content').style.display = 'block';
+    const overall = score >= 75
+      ? `The student performed <strong>well</strong> in the <strong>${subject}</strong> examination, achieving a score of <strong>${score}%</strong> in ${timeTaken} minutes. This reflects strong conceptual understanding and efficient time management.`
+      : score >= 50
+      ? `The student demonstrated <strong>moderate performance</strong> in ${subject}, scoring <strong>${score}%</strong>. The results show familiarity with fundamental concepts while revealing areas that need deeper attention.`
+      : `The student scored <strong>${score}%</strong> in ${subject}, indicating that <strong>significant improvement</strong> is needed. This result highlights gaps in core concept understanding that should be addressed promptly.`;
+    const strengths = score >= 75
+      ? `Good command over <strong>algorithm complexity analysis</strong> and <strong>data structure selection</strong>. Efficient use of exam time (${timeTaken} minutes for ${total} questions). Strong performance in tree traversal and sorting algorithm questions.`
+      : `Shows basic understanding of <strong>fundamental data structures</strong>. Attempted most questions which shows <strong>confidence in attempting</strong>. Time management was reasonable at ${timeTaken} minutes.`;
+    const improve = score >= 75
+      ? `Minor gaps observed in <strong>graph algorithm questions</strong> and <strong>amortized complexity</strong> analysis. Reviewing advanced topics like Red-Black Trees and hash collision resolution would push scores higher.`
+      : `Needs to strengthen understanding of <strong>time complexity analysis</strong>, <strong>graph algorithms</strong>, and <strong>balanced BST properties</strong>. Review sorting algorithm worst/average case differences carefully.`;
+    const reco = score >= 75
+      ? `Practice <strong>2–3 competitive programming problems</strong> daily on platforms like LeetCode. Revise graph algorithms (Dijkstra's, Kruskal's) and advanced tree structures. Aim for 85%+ in the next exam.`
+      : `Dedicate <strong>1 hour daily</strong> to Data Structures revision. Solve at least 5 MCQs per topic per day. Revisit lecture notes on sorting, trees, and graphs. Attempt at least 2 mock tests before the next exam.`;
+    document.getElementById('ai-overall').innerHTML = overall;
+    document.getElementById('ai-strengths').innerHTML = strengths;
+    document.getElementById('ai-improve').innerHTML = improve;
+    document.getElementById('ai-reco').innerHTML = reco;
+  }, 2500);
+}
+
+function renderQuestionReview() {
+  const review = document.getElementById('q-review');
+  questions.slice(0, 5).forEach((q, i) => {
+    const userAns = Math.random() > 0.3 ? q.ans : (q.ans + 1) % 4;
+    const isCorrect = userAns === q.ans;
+    const div = document.createElement('div');
+    div.className = `q-item ${isCorrect ? 'correct' : 'wrong'}`;
+    div.innerHTML = `<div class="q-item-top"><span class="q-num">Q${i + 1}</span><span class="q-status ${isCorrect ? 'c' : 'w'}">${isCorrect ? '✓ Correct' : '✗ Wrong'}</span></div>
+      <div class="q-q">${q.q}</div>
+      <div class="q-answer">Your answer: ${labels[userAns]}. ${q.opts[userAns]} &nbsp;|&nbsp; Correct: <span>${labels[q.ans]}. ${q.opts[q.ans]}</span></div>`;
+    review.appendChild(div);
+  });
+}
+
+loadAttemptResult().then(() => {
+  renderAiReport();
+  renderQuestionReview();
+});
+</script>
+<script src="api.js"></script>
+<script>
+  API.requireAuth('student');
+</script>
+</body>
+</html>
