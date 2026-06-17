@@ -4,9 +4,26 @@
  * Usage: const user = await API.login(email, pass)
  */
 
-const API_BASE = 'http://localhost:5000/api';
-// ↑ Flask serves both frontend & backend from port 5000
-//   so all API calls go to the same origin — no CORS issues.
+const API_BASE = (function() {
+  // Priority: explicit `window.BACKEND_URL` (set in HTML or by hosting),
+  // then localhost for dev, then relative `/api` for production same-origin.
+  if (window.BACKEND_URL) {
+    let u = window.BACKEND_URL;
+    if (u.endsWith('/')) u = u.slice(0, -1);
+    return u.endsWith('/api') ? u : u + '/api';
+  }
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5000/api';
+  }
+  return '/api';
+})();
+
+// Notes:
+// - For local dev the frontend will call http://localhost:5000/api
+// - For production, if backend is same origin, relative `/api` will work
+// - To point to a separate backend origin, set `window.BACKEND_URL` in your
+//   HTML (see index.html) or via your hosting platform's HTML templating
+//   mechanism.
 
 const API = {
 
@@ -44,13 +61,6 @@ const API = {
 
   currentToken() {
     return localStorage.getItem('ea_token');
-  },
-
-  requireAuth(role = null) {
-    const user = this.currentUser();
-    if (!user) { window.location.href = 'index.html'; return null; }
-    if (role && user.role !== role) { window.location.href = 'index.html'; return null; }
-    return user;
   },
 
   requireAuth(role = null) {
@@ -168,7 +178,10 @@ async function _post(path, body) {
     return await res.json();
   } catch (e) {
     console.error('API POST error', path, e);
-    return { error: e.message };
+    const hint = (e.message === 'Failed to fetch')
+      ? ' Cannot reach the server. Open the app via your Render URL (not localhost), resume the Render service if suspended, or set window.BACKEND_URL in config.js.'
+      : '';
+    return { error: e.message + hint };
   }
 }
 
